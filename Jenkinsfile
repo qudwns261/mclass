@@ -16,6 +16,9 @@ pipeline {
 
         REMOTE_DIR = "/home/ec2-user/deploy" // 원격 서버에 파일 복사할 경로
         SSH_CREDENTIALS_ID = "d4c312e9-ae9f-4faa-958b-fbf0ac0621d5" // Jenkins SSH 자격 증명 ID ,Credentials 에서 나오는 ID값
+
+        // Jenkins Secret File ID
+        SECRET_FILE_ID = "f7f9b2c3-b555-4e51-924f-83ca130c100f"
     }
 
     stages {
@@ -39,6 +42,17 @@ pipeline {
                 //  빌드 결과물인 JAR 파일을 지정한 이름(app.jar)으로 복사
             sh 'cp target/demo-0.0.1-SNAPSHOT.jar ${JAR_FILE_NAME}' 
             }  
+        }
+        
+                stage('Inject Spring Config (Secret File)') {
+            steps {
+                withCredentials([file(credentialsId: env.SECRET_FILE_ID, variable: 'SPRING_CONFIG_FILE')]) {
+                    sh """
+                        echo "[INFO] Using secret file: $SPRING_CONFIG_FILE"
+                        cp \$SPRING_CONFIG_FILE ./application-prod.properties
+                    """
+                }
+            }
         }
 
         stage('Copy to Remote Server') {
